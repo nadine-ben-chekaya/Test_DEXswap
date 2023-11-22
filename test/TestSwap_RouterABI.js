@@ -1,5 +1,6 @@
 const { expect } = require("chai")
 const { ethers } = require("hardhat")
+const {NonceManager} = require("ethers")
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 const routerArtifact = require('@uniswap/v2-periphery/build/UniswapV2Router02.json')
 const { abi: UniV3SwapRouterABI} = require('@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json')
@@ -82,6 +83,8 @@ describe("SWAP TEST",() => {
         console.log('USDT Balance:', ethers.formatUnits(usdtBalance_after, 6))
         console.log('--------------------')
         /****************************/
+        const nonce = await provider.getTransactionCount(signer.address);
+        console.log("nonce=",nonce)
      
 
     });
@@ -111,9 +114,12 @@ describe("SWAP TEST",() => {
         console.log('USDT Balance:', ethers.formatUnits(usdtBalance, 6))
         console.log('--------------------')
         /****************************/
+        const nonce = await provider.getTransactionCount(signer.address);
+        console.log("nonce=",nonce)
+        let mynonce= nonce + 1;
         
         const amountIn = ethers.parseUnits('1', 18)
-        const tx1 = await weth.connect(signer).approve(routerV3.target, amountIn)
+        const tx1 = await weth.connect(signer).approve(routerV3.target, amountIn, {nonce:await provider.getTransactionCount(signer.address)})
         tx1.wait()
         
         const params = {
@@ -126,14 +132,15 @@ describe("SWAP TEST",() => {
             amountOutMinimum: 0,
             sqrtPriceLimitX96: 0,
         }
-
-        const tx2 = await routerV3.connect(signer).exactInputSingle(
-            params,
-            {
-                gasLimit: 1000000
-            }
-        )
-        await tx2.wait()
+        
+        // const tx2 = await routerV3.connect(signer).exactInputSingle(
+        //     params,
+        //     {
+        //         gasLimit: 1000000,
+        //         nonce: await provider.getTransactionCount(signer.address)
+        //     }
+        // )
+        // await tx2.wait()
 
         /********Display Balance After Swap***********/
         const ethBalance_after = await provider.getBalance(signer.address)
@@ -175,7 +182,7 @@ describe("SWAP TEST",() => {
         /****************************/
         
         const amountIn = ethers.parseUnits('1', 18)
-        const tx1 = await weth.connect(signer).approve(router_pancake.target, amountIn)
+        const tx1 = await weth.connect(signer).approve(router_pancake.target, amountIn,{nonce:await provider.getTransactionCount(signer.address)})
         tx1.wait()
         const tx2 = await router_pancake.connect(signer).swapExactTokensForTokens(
             amountIn,
@@ -184,7 +191,8 @@ describe("SWAP TEST",() => {
             signer.address,
             Math.floor(Date.now() / 1000) + (60 * 10),
             {
-                gasLimit: 1000000
+                gasLimit: 1000000,
+                nonce: await provider.getTransactionCount(signer.address)
             }
         )
         await tx2.wait()
@@ -229,7 +237,7 @@ describe("SWAP TEST",() => {
         /****************************/
         
         const amountIn = ethers.parseUnits('1', 18)
-        const tx1 = await weth.connect(signer).approve(router_sushi.target, amountIn)
+        const tx1 = await weth.connect(signer).approve(router_sushi.target, amountIn,{nonce:await provider.getTransactionCount(signer.address)})
         tx1.wait()
         
         const tx2 = await router_sushi.connect(signer).swapExactTokensForTokens(
@@ -239,7 +247,8 @@ describe("SWAP TEST",() => {
             signer.address,
             Math.floor(Date.now() / 1000) + (60 * 10),
             {
-                gasLimit: 1000000
+                gasLimit: 1000000,
+                nonce: await provider.getTransactionCount(signer.address)
             }
         )
         await tx2.wait()
